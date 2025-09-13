@@ -1,0 +1,38 @@
+name: Deploy ref_stats.json to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'data/ref_stats.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Password (si usás password)
+      - name: SFTP Deploy (password)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        if: ${{ secrets.SFTP_PASSWORD != '' }}
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: 'data/ref_stats.json'
+          remote_path: 'public_html/data/ref_stats.json'
+          sftp_only: true
+
+      # Clave SSH (recomendado)
+      - name: SFTP Deploy (ssh key)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        if: ${{ secrets.SFTP_PRIVATE_KEY != '' }}
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USER }}
+          private_key: ${{ secrets.SFTP_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SFTP_PASSPHRASE }}
+          local_path: 'data/ref_stats.json'
+          remote_path: 'public_html/data/ref_stats.json'
+          sftp_only: true
