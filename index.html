@@ -1,16 +1,90 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>JBU • Datos de referidos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body{font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:40px; color:#222}
-  .card{border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:720px}
+  :root {
+    --b:#111827; --t:#111827; --mut:#6b7280; --br:#e5e7eb; --bg:#ffffff;
+    --ok:#16a34a; --warn:#f59e0b; --card:#ffffff;
+  }
+  body{
+    font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    margin:40px; color:var(--t); background:var(--bg);
+  }
+  .card{border:1px solid var(--br);border-radius:12px;padding:20px;max-width:760px;background:var(--card)}
   h1{margin:0 0 12px}
   code{background:#f5f5f5;padding:2px 6px;border-radius:6px}
-  a.btn{display:inline-block;margin-top:12px;padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;text-decoration:none}
+  a.btn{display:inline-block;margin-top:12px;padding:10px 14px;border:1px solid #d1d5db;border-radius:10px;text-decoration:none;color:var(--b)}
+  .stats{border:1px solid var(--br);border-radius:12px;padding:16px;margin-top:20px;max-width:760px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .pill{border:1px solid var(--br);border-radius:999px;padding:6px 10px;font-size:14px}
+  .kpi{display:flex;gap:8px;align-items:baseline}
+  .kpi b{font-size:20px}
+  .mut{color:var(--mut);font-size:12px}
 </style>
-<div class="card">
+
+<div id="info" class="card">
   <h1>JBU • Datos de referidos</h1>
   <p>Este repositorio publica el JSON que consume tu web.</p>
   <p>Archivo: <a href="data/ref_stats.json"><code>data/ref_stats.json</code></a></p>
   <a class="btn" href="data/ref_stats.json">Ver JSON</a>
+  <p class="mut">Tip: abrí <code>?c=CODIGO&view=stats</code> para ver el panel de un referente.</p>
 </div>
+
+<div id="stats" class="stats" style="display:none"></div>
+
+<script>
+(async () => {
+  const qs = new URLSearchParams(location.search);
+  const wantStats = (qs.get('view')||'').toLowerCase()==='stats';
+  const code = (qs.get('c')||'').trim().toUpperCase();
+
+  if (!wantStats) return;           // Solo mostramos stats si viene view=stats
+  if (!code) {                      // y si trae c=CODIGO
+    const s = document.getElementById('stats');
+    s.style.display='block';
+    s.innerHTML = `<div class="mut">Falta el código (?c=...)</div>`;
+    return;
+  }
+
+  // Oculto la tarjeta informativa y muestro contenedor de stats
+  document.getElementById('info').style.display='none';
+  const box = document.getElementById('stats');
+  box.style.display='block';
+
+  // URL RAW al JSON (tu repo público)
+  const url = 'https://raw.githubusercontent.com/takumi-code-uy/jbu-ref-data/main/data/ref_stats.json';
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    const r = data.referrers?.[code];
+    if (!r) {
+      box.innerHTML = `<div>No hay movimientos registrados (aún) para <b>${code}</b>.</div>`;
+      return;
+    }
+
+    const fmt = n => new Intl.NumberFormat('es-UY').format(+n||0);
+    const updated = data.updated_at ? new Date(data.updated_at).toLocaleString('es-UY') : '-';
+
+    box.innerHTML = `
+      <div class="row">
+        <div class="pill"><b>Código:</b> ${code}</div>
+        <div class="pill"><b>Nombre:</b> ${r.name || '-'}</div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="kpi"><span>Referidos:</span> <b>${fmt(r.count||0)}</b></div>
+        <div class="kpi"><span>Ganado (pagado):</span> <b>$ ${fmt(r.total_paid||0)}</b></div>
+        <div class="kpi"><span>Pendiente:</span> <b>$ ${fmt(r.total_pending||0)}</b></div>
+      </div>
+      <div class="mut" style="margin-top:8px">Actualizado: ${updated}</div>
+    `;
+  } catch (e) {
+    console.error(e);
+    box.innerHTML = `<div class="mut">No se pudieron cargar las estadísticas. Probá nuevamente.</div>`;
+  }
+})();
+</script>
