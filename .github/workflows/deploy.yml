@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'data/ref_stats.json'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,8 +15,8 @@ jobs:
 
       # Password (si usás password)
       - name: SFTP Deploy (password)
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         if: ${{ secrets.SFTP_PASSWORD != '' }}
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
@@ -26,8 +27,8 @@ jobs:
 
       # Clave SSH (recomendado)
       - name: SFTP Deploy (ssh key)
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         if: ${{ secrets.SFTP_PRIVATE_KEY != '' }}
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
